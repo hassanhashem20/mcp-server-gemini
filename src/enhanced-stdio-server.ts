@@ -113,7 +113,8 @@ class EnhancedStdioMCPServer {
               capabilities: {
                 tools: {},
                 resources: {},
-                prompts: {}
+                prompts: {},
+                logging: {}
               }
             }
           };
@@ -164,6 +165,9 @@ class EnhancedStdioMCPServer {
             };
           }
           break;
+
+        case 'notifications/initialized':
+          return;
 
         case 'resources/subscribe':
           response = {
@@ -413,6 +417,22 @@ class EnhancedStdioMCPServer {
             }
           }
         }
+      },
+      {
+        name: 'ping',
+        description: 'Ping the server to check connectivity',
+        inputSchema: {
+          type: 'object',
+          properties: {}
+        }
+      },
+      {
+        name: 'check_connection',
+        description: 'Check connection to Gemini API',
+        inputSchema: {
+          type: 'object',
+          properties: {}
+        }
       }
     ];
   }
@@ -531,6 +551,18 @@ class EnhancedStdioMCPServer {
 
       case 'get_help':
         return this.getHelp(request.id, args);
+
+      case 'ping':
+        return {
+          jsonrpc: '2.0',
+          id: request.id,
+          result: {
+            content: [{ type: 'text', text: 'pong' }]
+          }
+        };
+
+      case 'check_connection':
+        return await this.checkConnection(request.id);
 
       default:
         return {
@@ -1267,6 +1299,37 @@ Just ask naturally:
         }]
       }
     };
+  }
+
+  private async checkConnection(id: any): Promise<MCPResponse> {
+    try {
+      const model = 'gemini-2.0-flash';
+      // Try a minimal generation to verify key and connection
+      await this.genAI.models.generateContent({
+        model,
+        contents: [{ role: 'user', parts: [{ text: 'hi' }] }]
+      });
+
+      return {
+        jsonrpc: '2.0',
+        id,
+        result: {
+          content: [{
+            type: 'text',
+            text: 'Connection to Gemini API successful.'
+          }]
+        }
+      };
+    } catch (error) {
+      return {
+        jsonrpc: '2.0',
+        id,
+        error: {
+          code: -32603,
+          message: `Gemini API connection failed: ${error instanceof Error ? error.message : String(error)}`
+        }
+      };
+    }
   }
 
   private sendResponse(response: MCPResponse) {
