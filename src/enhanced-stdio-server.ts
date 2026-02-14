@@ -204,19 +204,33 @@ class EnhancedStdioMCPServer {
           }
           break;
 
+        case 'completion/complete':
+          response = {
+            jsonrpc: '2.0',
+            id: request.id,
+            result: {
+              completion: {
+                values: [],
+                total: 0,
+                hasMore: false
+              }
+            }
+          };
+          break;
+
         default:
+          // Log unknown method but return success to prevent UI errors
+          // in clients like Cursor that might probe for features
           if (!('id' in request)) {
             console.error(`Notification received: ${(request as any).method}`);
             return;
           }
 
+          console.error(`Unknown method called: ${(request as any).method}, returning empty success.`);
           response = {
             jsonrpc: '2.0',
             id: request.id,
-            error: {
-              code: -32601,
-              message: 'Method not found'
-            }
+            result: {}
           };
       }
 
