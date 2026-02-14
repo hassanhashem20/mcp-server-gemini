@@ -120,13 +120,24 @@ class EnhancedStdioMCPServer {
           break;
 
         case 'tools/list':
-          response = {
-            jsonrpc: '2.0',
-            id: request.id,
-            result: {
-              tools: this.getAvailableTools()
-            }
-          };
+          try {
+            const tools = this.getAvailableTools();
+            response = {
+              jsonrpc: '2.0',
+              id: request.id,
+              result: {
+                tools: Array.isArray(tools) ? tools : []
+              }
+            };
+          } catch (error) {
+            response = {
+              jsonrpc: '2.0',
+              id: request.id,
+              result: {
+                tools: []
+              }
+            };
+          }
           break;
 
         case 'tools/call':
@@ -134,11 +145,32 @@ class EnhancedStdioMCPServer {
           break;
 
         case 'resources/list':
+          try {
+            const resources = this.getAvailableResources();
+            response = {
+              jsonrpc: '2.0',
+              id: request.id,
+              result: {
+                resources: Array.isArray(resources) ? resources : []
+              }
+            };
+          } catch (error) {
+            response = {
+              jsonrpc: '2.0',
+              id: request.id,
+              result: {
+                resources: []
+              }
+            };
+          }
+          break;
+
+        case 'resources/subscribe':
           response = {
             jsonrpc: '2.0',
             id: request.id,
             result: {
-              resources: this.getAvailableResources()
+              success: true
             }
           };
           break;
@@ -148,13 +180,24 @@ class EnhancedStdioMCPServer {
           break;
 
         case 'prompts/list':
-          response = {
-            jsonrpc: '2.0',
-            id: request.id,
-            result: {
-              prompts: this.getAvailablePrompts()
-            }
-          };
+          try {
+            const prompts = this.getAvailablePrompts();
+            response = {
+              jsonrpc: '2.0',
+              id: request.id,
+              result: {
+                prompts: Array.isArray(prompts) ? prompts : []
+              }
+            };
+          } catch (error) {
+            response = {
+              jsonrpc: '2.0',
+              id: request.id,
+              result: {
+                prompts: []
+              }
+            };
+          }
           break;
 
         default:
