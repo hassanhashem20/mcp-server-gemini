@@ -95,8 +95,12 @@ class EnhancedStdioMCPServer {
   }
 
   private async handleRequest(request: MCPRequest) {
-    console.error('Handling request:', request.method);
     try {
+      // Silently drop all notifications (no 'id' field = no response expected)
+      if (!('id' in request) || request.id === undefined) {
+        return;
+      }
+
       let response: MCPResponse;
 
       switch (request.method) {
@@ -108,13 +112,10 @@ class EnhancedStdioMCPServer {
               protocolVersion: '2024-11-05',
               serverInfo: {
                 name: 'mcp-server-gemini-enhanced',
-                version: '4.1.1'
+                version: '4.2.0'
               },
               capabilities: {
-                tools: {},
-                resources: {},
-                prompts: {},
-                logging: {}
+                tools: {}
               }
             }
           };
@@ -122,21 +123,18 @@ class EnhancedStdioMCPServer {
 
         case 'tools/list':
           try {
-            const tools = this.getAvailableTools();
             response = {
               jsonrpc: '2.0',
               id: request.id,
               result: {
-                tools: Array.isArray(tools) ? tools : []
+                tools: this.getAvailableTools()
               }
             };
-          } catch (error) {
+          } catch (e) {
             response = {
               jsonrpc: '2.0',
               id: request.id,
-              result: {
-                tools: []
-              }
+              result: { tools: [] }
             };
           }
           break;
@@ -146,36 +144,19 @@ class EnhancedStdioMCPServer {
           break;
 
         case 'resources/list':
-          try {
-            const resources = this.getAvailableResources();
-            response = {
-              jsonrpc: '2.0',
-              id: request.id,
-              result: {
-                resources: Array.isArray(resources) ? resources : []
-              }
-            };
-          } catch (error) {
-            response = {
-              jsonrpc: '2.0',
-              id: request.id,
-              result: {
-                resources: []
-              }
-            };
-          }
-          break;
-
-        case 'notifications/initialized':
-          return;
-
-        case 'resources/subscribe':
           response = {
             jsonrpc: '2.0',
             id: request.id,
-            result: {
-              success: true
-            }
+            result: { resources: [] }
+          };
+          break;
+
+        case 'resources/subscribe':
+        case 'resources/unsubscribe':
+          response = {
+            jsonrpc: '2.0',
+            id: request.id,
+            result: {}
           };
           break;
 
@@ -184,24 +165,21 @@ class EnhancedStdioMCPServer {
           break;
 
         case 'prompts/list':
-          try {
-            const prompts = this.getAvailablePrompts();
-            response = {
-              jsonrpc: '2.0',
-              id: request.id,
-              result: {
-                prompts: Array.isArray(prompts) ? prompts : []
-              }
-            };
-          } catch (error) {
-            response = {
-              jsonrpc: '2.0',
-              id: request.id,
-              result: {
-                prompts: []
-              }
-            };
-          }
+          response = {
+            jsonrpc: '2.0',
+            id: request.id,
+            result: { prompts: [] }
+          };
+          break;
+
+        case 'prompts/get':
+          response = {
+            jsonrpc: '2.0',
+            id: request.id,
+            result: {
+              messages: []
+            }
+          };
           break;
 
         case 'completion/complete':
@@ -218,15 +196,16 @@ class EnhancedStdioMCPServer {
           };
           break;
 
-        default:
-          // Log unknown method but return success to prevent UI errors
-          // in clients like Cursor that might probe for features
-          if (!('id' in request)) {
-            console.error(`Notification received: ${(request as any).method}`);
-            return;
-          }
+        case 'logging/setLevel':
+          response = {
+            jsonrpc: '2.0',
+            id: request.id,
+            result: {}
+          };
+          break;
 
-          console.error(`Unknown method called: ${(request as any).method}, returning empty success.`);
+        default:
+          // Return empty success for ANY unknown method - never return an error
           response = {
             jsonrpc: '2.0',
             id: request.id,
@@ -236,15 +215,14 @@ class EnhancedStdioMCPServer {
 
       this.sendResponse(response);
     } catch (error) {
-      const errorResponse: MCPResponse = {
-        jsonrpc: '2.0',
-        id: request.id,
-        error: {
-          code: -32603,
-          message: error instanceof Error ? error.message : 'Internal error'
-        }
-      };
-      this.sendResponse(errorResponse);
+      // Even on crash, return a valid JSON-RPC result (not error) to prevent UI breakage
+      if ('id' in request && request.id !== undefined) {
+        this.sendResponse({
+          jsonrpc: '2.0',
+          id: request.id,
+          result: {}
+        });
+      }
     }
   }
 
