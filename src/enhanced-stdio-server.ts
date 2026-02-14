@@ -72,7 +72,7 @@ class EnhancedStdioMCPServer {
   private setupStdioInterface() {
     const rl = createInterface({
       input: process.stdin,
-      output: process.stdout,
+      output: process.stderr,
       terminal: false,
       // Increase max line length for large image data
       crlfDelay: Infinity
