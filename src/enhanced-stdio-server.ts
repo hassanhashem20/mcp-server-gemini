@@ -29,7 +29,7 @@ const GEMINI_MODELS = {
     contextWindow: 1000000,
     thinking: true
   },
-  
+
   // 2.0 series
   'gemini-2.0-flash': {
     description: 'Fast, efficient model with 1M context window',
@@ -46,7 +46,7 @@ const GEMINI_MODELS = {
     features: ['function_calling', 'json_mode', 'grounding', 'system_instructions'],
     contextWindow: 2000000
   },
-  
+
   // Legacy models (for compatibility)
   'gemini-1.5-pro': {
     description: 'Previous generation pro model',
@@ -63,7 +63,7 @@ const GEMINI_MODELS = {
 class EnhancedStdioMCPServer {
   private genAI: GoogleGenAI;
   private conversations: Map<string, any[]> = new Map();
-  
+
   constructor(apiKey: string) {
     this.genAI = new GoogleGenAI({ apiKey });
     this.setupStdioInterface();
@@ -108,7 +108,7 @@ class EnhancedStdioMCPServer {
               protocolVersion: '2024-11-05',
               serverInfo: {
                 name: 'mcp-server-gemini-enhanced',
-                version: '4.1.0'
+                version: '4.1.1'
               },
               capabilities: {
                 tools: {},
@@ -205,7 +205,7 @@ class EnhancedStdioMCPServer {
             console.error(`Notification received: ${(request as any).method}`);
             return;
           }
-          
+
           response = {
             jsonrpc: '2.0',
             id: request.id,
@@ -516,22 +516,22 @@ class EnhancedStdioMCPServer {
     switch (name) {
       case 'generate_text':
         return await this.generateText(request.id, args);
-      
+
       case 'analyze_image':
         return await this.analyzeImage(request.id, args);
-      
+
       case 'count_tokens':
         return await this.countTokens(request.id, args);
-      
+
       case 'list_models':
         return this.listModels(request.id, args);
-      
+
       case 'embed_text':
         return await this.embedText(request.id, args);
-      
+
       case 'get_help':
         return this.getHelp(request.id, args);
-      
+
       default:
         return {
           jsonrpc: '2.0',
@@ -548,7 +548,7 @@ class EnhancedStdioMCPServer {
     try {
       const model = args.model || 'gemini-2.5-flash';
       const modelInfo = GEMINI_MODELS[model as keyof typeof GEMINI_MODELS];
-      
+
       if (!modelInfo) {
         throw new Error(`Unknown model: ${model}`);
       }
@@ -679,7 +679,7 @@ class EnhancedStdioMCPServer {
       } else if (args.imageBase64) {
         // Log base64 data size for debugging
         console.error(`Image base64 length: ${args.imageBase64.length}`);
-        
+
         // Extract MIME type and data
         const matches = args.imageBase64.match(/^data:(.+);base64,(.+)$/);
         if (matches) {
@@ -741,7 +741,7 @@ class EnhancedStdioMCPServer {
   private async countTokens(id: any, args: any): Promise<MCPResponse> {
     try {
       const model = args.model || 'gemini-2.5-flash';
-      
+
       const result = await this.genAI.models.countTokens({
         model,
         contents: [{
@@ -823,7 +823,7 @@ class EnhancedStdioMCPServer {
   private async embedText(id: any, args: any): Promise<MCPResponse> {
     try {
       const model = args.model || 'text-embedding-004';
-      
+
       const result = await this.genAI.models.embedContent({
         model,
         contents: args.text
@@ -860,7 +860,7 @@ class EnhancedStdioMCPServer {
 
   private async handleResourceRead(request: MCPRequest): Promise<MCPResponse> {
     const uri = request.params?.uri;
-    
+
     if (!uri) {
       return {
         jsonrpc: '2.0',
